@@ -2,11 +2,14 @@ package main
 
 import (
 	"bufio"
+	"flag"
 	"fmt"
 	"io"
 	"os"
 	"regexp"
 	"strings"
+
+	"github.com/nyaosorg/go-windows-mbcs"
 )
 
 var rxPattern = regexp.MustCompile(`%[^%]+%`)
@@ -42,6 +45,8 @@ func replaceReader(macro map[string][]byte, fd io.Reader) error {
 	}
 }
 
+var flagAnsi = flag.Bool("ansi", false, "macro value is not UTF8 (ANSI)")
+
 func mains(args []string) error {
 	macro := make(map[string][]byte)
 	fileCount := 0
@@ -50,7 +55,15 @@ func mains(args []string) error {
 		if pos >= 0 {
 			left := arg[0:pos]
 			right := arg[pos+1:]
-			macro[left] = []byte(right)
+			if *flagAnsi {
+				var err error
+				macro[left], err = mbcs.UtoA(right, mbcs.ACP)
+				if err != nil {
+					return fmt.Errorf("%s: %w", arg, err)
+				}
+			} else {
+				macro[left] = []byte(right)
+			}
 		} else {
 			if err := replaceFile(macro, arg); err != nil {
 				return err
@@ -67,7 +80,8 @@ func mains(args []string) error {
 }
 
 func main() {
-	if err := mains(os.Args[1:]); err != nil {
+	flag.Parse()
+	if err := mains(flag.Args()); err != nil {
 		fmt.Fprintln(os.Stderr, err.Error())
 		os.Exit(1)
 	}
