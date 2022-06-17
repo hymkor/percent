@@ -11,7 +11,7 @@ $ percent WINDOWS=C:\Windows sample.in
 Windows=C:\Windows
 ```
 
-TO DO
------
+Usage: `percent [-ansi] {NAME=VALUE}... filename...`
 
-- Support Multibyte character System
+* `-ansi`
+    * The encoding of VALUE is not UTF8 (ANSI)
