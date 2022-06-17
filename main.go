@@ -23,19 +23,19 @@ func replaceFile(macro map[string]string, fname string) error {
 func replaceReader(macro map[string]string, fd io.Reader) error {
 	br := bufio.NewReader(fd)
 	for {
-		text, err := br.ReadString('\n')
+		line, err := br.ReadBytes('\n')
 		if err != nil && err != io.EOF {
 			return err
 		}
-		text = rxPattern.ReplaceAllStringFunc(text, func(s string) string {
-			name := s[1 : len(s)-1]
+		line = rxPattern.ReplaceAllFunc(line, func(s []byte) []byte {
+			name := string(s[1 : len(s)-1])
 			if value, ok := macro[name]; ok {
-				return value
+				return []byte(value)
 			} else {
 				return s
 			}
 		})
-		io.WriteString(os.Stdout, text)
+		os.Stdout.Write(line)
 		if err == io.EOF {
 			return nil
 		}
