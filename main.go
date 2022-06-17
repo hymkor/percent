@@ -11,7 +11,7 @@ import (
 
 var rxPattern = regexp.MustCompile(`%[^%]+%`)
 
-func replaceFile(macro map[string]string, fname string) error {
+func replaceFile(macro map[string][]byte, fname string) error {
 	fd, err := os.Open(fname)
 	if err != nil {
 		return err
@@ -20,7 +20,7 @@ func replaceFile(macro map[string]string, fname string) error {
 	return replaceReader(macro, fd)
 }
 
-func replaceReader(macro map[string]string, fd io.Reader) error {
+func replaceReader(macro map[string][]byte, fd io.Reader) error {
 	br := bufio.NewReader(fd)
 	for {
 		line, err := br.ReadBytes('\n')
@@ -30,7 +30,7 @@ func replaceReader(macro map[string]string, fd io.Reader) error {
 		line = rxPattern.ReplaceAllFunc(line, func(s []byte) []byte {
 			name := string(s[1 : len(s)-1])
 			if value, ok := macro[name]; ok {
-				return []byte(value)
+				return value
 			} else {
 				return s
 			}
@@ -43,14 +43,14 @@ func replaceReader(macro map[string]string, fd io.Reader) error {
 }
 
 func mains(args []string) error {
-	macro := make(map[string]string)
+	macro := make(map[string][]byte)
 	fileCount := 0
 	for _, arg := range args {
 		pos := strings.IndexByte(arg, '=')
 		if pos >= 0 {
 			left := arg[0:pos]
 			right := arg[pos+1:]
-			macro[left] = right
+			macro[left] = []byte(right)
 		} else {
 			if err := replaceFile(macro, arg); err != nil {
 				return err
