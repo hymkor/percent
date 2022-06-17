@@ -31,7 +31,7 @@ func replaceReader(macro map[string][]byte, fd io.Reader) error {
 			return err
 		}
 		line = rxPattern.ReplaceAllFunc(line, func(s []byte) []byte {
-			name := string(s[1 : len(s)-1])
+			name := strings.ToUpper(string(s[1 : len(s)-1]))
 			if value, ok := macro[name]; ok {
 				return value
 			} else {
@@ -53,7 +53,7 @@ func mains(args []string) error {
 	for _, arg := range args {
 		pos := strings.IndexByte(arg, '=')
 		if pos >= 0 {
-			left := arg[0:pos]
+			left := strings.ToUpper(arg[0:pos])
 			right := arg[pos+1:]
 			if *flagAnsi {
 				var err error
