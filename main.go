@@ -17,14 +17,16 @@ func replaceFile(macro map[string]string, fname string) error {
 		return err
 	}
 	defer fd.Close()
-	replaceReader(macro, fd)
-	return nil
+	return replaceReader(macro, fd)
 }
 
-func replaceReader(macro map[string]string, fd io.Reader) {
-	sc := bufio.NewScanner(fd)
-	for sc.Scan() {
-		text := sc.Text()
+func replaceReader(macro map[string]string, fd io.Reader) error {
+	br := bufio.NewReader(fd)
+	for {
+		text, err := br.ReadString('\n')
+		if err != nil && err != io.EOF {
+			return err
+		}
 		text = rxPattern.ReplaceAllStringFunc(text, func(s string) string {
 			name := s[1 : len(s)-1]
 			if value, ok := macro[name]; ok {
@@ -33,7 +35,10 @@ func replaceReader(macro map[string]string, fd io.Reader) {
 				return s
 			}
 		})
-		fmt.Println(text)
+		io.WriteString(os.Stdout, text)
+		if err == io.EOF {
+			return nil
+		}
 	}
 }
 
@@ -54,7 +59,9 @@ func mains(args []string) error {
 		}
 	}
 	if fileCount <= 0 {
-		replaceReader(macro, os.Stdin)
+		if err := replaceReader(macro, os.Stdin); err != nil {
+			return err
+		}
 	}
 	return nil
 }
